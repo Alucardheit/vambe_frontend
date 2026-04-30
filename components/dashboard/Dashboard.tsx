@@ -1,18 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import {
   getIndicatorsServerSnapshot,
   getIndicatorsSnapshot,
   parseStoredIndicators,
   subscribeIndicators,
-  type StoredIndicators,
 } from "@/lib/indicators-storage";
-import { AreaChart } from "./AreaChart";
 import { CategoryChart } from "./CategoryChart";
+import { ClientsList } from "./ClientsList";
 import { ClosedRateCard } from "./ClosedRateCard";
+import { InsightsList } from "./InsightsList";
 import { StatCard } from "./StatCard";
+
+const TOP_INDUSTRIES = 8;
 
 export function Dashboard() {
   const raw = useSyncExternalStore(
@@ -21,6 +23,7 @@ export function Dashboard() {
     getIndicatorsServerSnapshot
   );
   const stored = useMemo(() => parseStoredIndicators(raw), [raw]);
+  const [showAllIndustries, setShowAllIndustries] = useState(false);
 
   if (!stored) {
     return <EmptyState />;
@@ -28,6 +31,12 @@ export function Dashboard() {
 
   const { data, meta } = stored;
   const computedAt = new Date(meta.computedAt);
+
+  const industriesToShow = showAllIndustries
+    ? data.closed_rate_by_industria
+    : data.closed_rate_by_industria.slice(0, TOP_INDUSTRIES);
+  const hiddenIndustries =
+    data.closed_rate_by_industria.length - industriesToShow.length;
 
   return (
     <div className="w-full space-y-8">
@@ -110,55 +119,86 @@ export function Dashboard() {
         />
       </div>
 
-      <AreaChart
-        data={data.industria_area_chart}
-        title="Tasa de Cierre por Industria"
-      />
+      <div className="grid gap-8 lg:grid-cols-2">
+        <InsightsList
+          title="Señales positivas de compra"
+          data={data.top_puntos_positivos ?? []}
+          tone="positive"
+          icon="✓"
+          emptyHint="No se detectaron señales de compra recurrentes."
+        />
+        <InsightsList
+          title="Dolores del cliente más mencionados"
+          data={data.top_puntos_negativos ?? []}
+          tone="negative"
+          icon="!"
+          emptyHint="No se detectaron dolores recurrentes."
+        />
+      </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <ClosedRateList
-          title="Tasa de Cierre por Industria"
-          items={data.closed_rate_by_industria}
+        <InsightsList
+          title="Objeciones más frecuentes"
+          data={data.top_objeciones ?? []}
+          tone="negative"
+          icon="✕"
+          emptyHint="No se encontraron objeciones recurrentes."
         />
-        <ClosedRateList
-          title="Tasa de Cierre por Vendedor"
-          items={data.closed_rate_by_vendedor}
+        <InsightsList
+          title="Próximos pasos sugeridos"
+          data={data.top_proximos_pasos ?? []}
+          tone="neutral"
+          icon="→"
+          emptyHint="El LLM no sugirió próximos pasos recurrentes."
         />
       </div>
-    </div>
-  );
-}
 
-function ClosedRateList({
-  title,
-  items,
-}: {
-  title: string;
-  items: StoredIndicators["data"]["closed_rate_by_industria"];
-}) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-gradient-to-br from-slate-950/55 to-slate-900/25 p-6 backdrop-blur-xl">
-      <h3 className="mb-6 text-sm font-semibold uppercase tracking-wider text-cyan-200">
-        {title}
-      </h3>
-      <div className="space-y-3">
-        {items.map((item) => (
-          <div
-            key={item.label}
-            className="flex items-center justify-between rounded-lg bg-white/5 p-3"
-          >
-            <div>
-              <p className="text-sm font-medium text-slate-200">{item.label}</p>
-              <p className="text-xs text-slate-500">
-                {item.closed} de {item.total}
+      <div className="rounded-xl border border-white/10 bg-gradient-to-br from-slate-950/55 to-slate-900/25 p-6 backdrop-blur-xl">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-cyan-200">
+            Tasa de cierre por industria
+          </h3>
+          {hiddenIndustries > 0 ? (
+            <button
+              type="button"
+              onClick={() => setShowAllIndustries(true)}
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 transition hover:bg-white/10"
+            >
+              Ver {hiddenIndustries} más
+            </button>
+          ) : data.closed_rate_by_industria.length > TOP_INDUSTRIES ? (
+            <button
+              type="button"
+              onClick={() => setShowAllIndustries(false)}
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 transition hover:bg-white/10"
+            >
+              Mostrar menos
+            </button>
+          ) : null}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {industriesToShow.map((item) => (
+            <div
+              key={item.label}
+              className="flex items-center justify-between rounded-lg bg-white/5 p-3"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-slate-200">
+                  {item.label}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {item.closed} de {item.total}
+                </p>
+              </div>
+              <p className="ml-3 shrink-0 text-lg font-bold text-emerald-400">
+                {item.closed_percentage.toFixed(0)}%
               </p>
             </div>
-            <p className="text-lg font-bold text-emerald-400">
-              {item.closed_percentage.toFixed(0)}%
-            </p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
+
+      <ClientsList clients={data.analyzed_rows ?? []} />
     </div>
   );
 }

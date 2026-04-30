@@ -69,7 +69,17 @@ export const PROVIDERS: ProviderInfo[] = [
       {
         id: "HuggingFaceTB/SmolLM2-1.7B-Instruct",
         label: "SmolLM2 1.7B",
-        description: "Modelo abierto pequeño",
+        description: "Rápido (~3 GB VRAM, calidad básica)",
+      },
+      {
+        id: "Qwen/Qwen2.5-3B-Instruct",
+        label: "Qwen2.5 3B",
+        description: "Balanceado (~6 GB VRAM, buena calidad ES)",
+      },
+      {
+        id: "Qwen/Qwen2.5-7B-Instruct",
+        label: "Qwen2.5 7B",
+        description: "Calidad alta (~14 GB VRAM, mejor razonamiento)",
       },
     ],
   },

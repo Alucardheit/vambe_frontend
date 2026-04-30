@@ -48,6 +48,11 @@ export interface IndicatorsResponse {
   closed_rate_by_industria: ClosedRateByCategory[];
   closed_rate_by_vendedor: ClosedRateByCategory[];
   industria_area_chart: StackedAreaChart;
+  top_puntos_positivos: CategoryStat[];
+  top_puntos_negativos: CategoryStat[];
+  top_objeciones: CategoryStat[];
+  top_proximos_pasos: CategoryStat[];
+  analyzed_rows: AnalyzedClientRow[];
 }
 
 // ----- Client analysis -----

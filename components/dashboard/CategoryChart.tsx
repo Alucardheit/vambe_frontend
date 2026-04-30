@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import type { CategoryStat } from "@/lib/api";
+import { CategoryListModal } from "./CategoryListModal";
 
 interface CategoryChartProps {
   title: string;
@@ -13,8 +15,10 @@ export function CategoryChart({
   data,
   maxItems = 5,
 }: CategoryChartProps) {
+  const [modalOpen, setModalOpen] = useState(false);
   const displayData = data.slice(0, maxItems);
   const maxCount = Math.max(...displayData.map((d) => d.count), 1);
+  const hidden = data.length - maxItems;
 
   return (
     <div className="rounded-xl border border-white/10 bg-gradient-to-br from-slate-950/55 to-slate-900/25 p-6 backdrop-blur-xl">
@@ -48,11 +52,24 @@ export function CategoryChart({
         ))}
       </div>
 
-      {data.length > maxItems && (
-        <p className="mt-4 text-xs text-slate-500">
-          +{data.length - maxItems} más
-        </p>
+      {hidden > 0 && (
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 transition hover:border-cyan-400/40 hover:bg-cyan-400/10 hover:text-cyan-200"
+        >
+          Ver {hidden} más
+          <span aria-hidden>›</span>
+        </button>
       )}
+
+      {modalOpen ? (
+        <CategoryListModal
+          title={title}
+          data={data}
+          onClose={() => setModalOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
